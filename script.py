@@ -7,18 +7,20 @@ from modules.script_callbacks import on_app_started
 
 client = None
 
+
 def healthcheck():
     gpu = False
     out = subprocess.run("nvidia-smi", shell=True)
-    if out.returncode == 0: # success state on shell command
+    if out.returncode == 0:  # success state on shell command
         gpu = True
     return {"state": "healthy", "gpu": gpu}
+
 
 async def inference(request: Request):
     global client
     body = await request.body()
     model_input = json.loads(body)
-    
+
     params = None
     mode = 'default'
 
@@ -46,9 +48,9 @@ async def inference(request: Request):
             del params['guidance_scale']
 
     if params is not None:
-        response = client.post('/sdapi/v1/' + endpoint, json = params)
+        response = client.post(endpoint, json=params)
     else:
-        response = client.get('/sdapi/v1/' + endpoint)
+        response = client.get(endpoint)
 
     output = response.json()
 
@@ -61,10 +63,12 @@ async def inference(request: Request):
 
     return output
 
+
 def register_endpoints(block, app):
     global client
     app.add_api_route('/healthcheck', healthcheck, methods=['GET'])
     app.add_api_route('/', inference, methods=['POST'])
     client = TestClient(app)
+
 
 on_app_started(register_endpoints)
